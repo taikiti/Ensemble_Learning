@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from chainer import cuda,optimizers
 from chainer import Variable,Chain,dataset, datasets
 from chainer import serializers
-from convolution import CNNetwork
+from convolution import CNNetwork9
 import os
 import cv2
 from chainer.datasets import mnist
@@ -30,7 +30,7 @@ def reset_seed(seed=0):
     if chainer.cuda.available:
         chainer.cuda.cupy.random.seed(seed)
 def get_model_optimizer(args):
-    model = CNNetwork()
+    model = CNNetwork9()
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
@@ -42,7 +42,7 @@ def get_model_optimizer(args):
 
 if __name__ == '__main__':
 
-    reset_seed(0)
+    # reset_seed(0)
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', default=-1, type=int)
     parser.add_argument('--epoch', default=100, type=int)
@@ -68,17 +68,17 @@ if __name__ == '__main__':
     test =  datasets.TupleDataset(test_data, test_label)
     train, valid = split_dataset_random(trainT,1000,seed=0)
 
-    gpu_id = -1  # CPUを用いる場合は、この値を-1にしてください
+    gpu_id = 0  # CPUを用いる場合は、この値を-1にしてください
     batchsize=64
+    model,optimizer = get_model_optimizer(args)
     if gpu_id >= 0:
         model.to_gpu(gpu_id)
-    model,optimizer = get_model_optimizer(args)
 
     train_iter = iterators.SerialIterator(train,batchsize)
     valid_iter = iterators.SerialIterator(valid,batchsize,repeat=False,shuffle=False)
     test_iter = iterators.SerialIterator(test,batchsize,repeat=False,shuffle=False)
 
-    max_epoch = 5
+    max_epoch = 100
     mean_loss=0
     delta = 1e-7
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     trainer.extend(extensions.snapshot(filename='snapshot_epoch-{.updater.epoch}'))
     trainer.extend(extensions.Evaluator(valid_iter, model, device=gpu_id), name='val')
     trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'main/accuracy', 'val/main/loss', 'val/main/accuracy', 'l1/W/data/std', 'elapsed_time']))
-    trainer.extend(extensions.ParameterStatistics(model.predictor.fc3, {'std': np.std}))
+    trainer.extend(extensions.ParameterStatistics(model.predictor.fc6, {'std': np.std}))
     trainer.extend(extensions.PlotReport(['l1/W/data/std'], x_key='epoch', file_name='std.png'))
     trainer.extend(extensions.PlotReport(['main/loss', 'val/main/loss'], x_key='epoch', file_name='loss.png'))
     trainer.extend(extensions.PlotReport(['main/accuracy', 'val/main/accuracy'], x_key='epoch', file_name='accuracy.png'))
